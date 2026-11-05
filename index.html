@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URL to HTML Extractor</title>
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 25px;
+  background: #0b1020;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+}
+
+h1 { color: #65a5ff; }
+
+input {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #34445f;
+  border-radius: 8px;
+  background: #151f33;
+  color: white;
+  font-size: 16px;
+  margin: 10px 0;
+}
+
+button {
+  padding: 12px 20px;
+  margin: 5px 5px 10px 0;
+  border: none;
+  border-radius: 7px;
+  background: #2878ee;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover { background: #4894ff; }
+
+#output {
+  width: 100%;
+  height: 500px;
+  padding: 15px;
+  background: #080d18;
+  color: #8ee6a5;
+  border: 1px solid #34445f;
+  border-radius: 8px;
+  resize: vertical;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+#status {
+  color: #a8b8d0;
+  margin: 12px 0;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🌐 URL to HTML Extractor</h1>
+  <p>Enter a website URL to extract and copy its HTML source code.</p>
+
+  <input
+    id="url"
+    type="url"
+    placeholder="https://example.com"
+  >
+
+  <button onclick="getHTML()">Get HTML</button>
+  <button onclick="copyHTML()">Copy HTML</button>
+  <button onclick="downloadHTML()">Download HTML</button>
+  <button onclick="clearAll()">Clear</button>
+
+  <p id="status">Ready.</p>
+
+  <textarea id="output"
+    placeholder="Your extracted HTML code will appear here..."
+    spellcheck="false"></textarea>
+</div>
+
+<script>
+async function getHTML() {
+  const url = document.getElementById("url").value.trim();
+  const output = document.getElementById("output");
+  const status = document.getElementById("status");
+
+  if (!url) {
+    status.textContent = "Please enter a URL.";
+    return;
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      throw new Error("Only HTTP and HTTPS URLs are supported.");
+    }
+
+    status.textContent = "Fetching website HTML...";
+
+    const response = await fetch(parsed.href);
+
+    if (!response.ok) {
+      throw new Error("Website returned error: " + response.status);
+    }
+
+    const html = await response.text();
+
+    output.value = html;
+    status.textContent =
+      "Success! Extracted " + html.length.toLocaleString() +
+      " characters of HTML.";
+
+  } catch (error) {
+    status.textContent =
+      "Error: " + error.message +
+      " (The website may block browser access through CORS.)";
+  }
+}
+
+async function copyHTML() {
+  const output = document.getElementById("output");
+
+  if (!output.value) {
+    document.getElementById("status").textContent =
+      "Nothing to copy!";
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(output.value);
+    document.getElementById("status").textContent =
+      "HTML copied successfully!";
+  } catch {
+    output.select();
+    document.execCommand("copy");
+    document.getElementById("status").textContent =
+      "Copy attempted.";
+  }
+}
+
+function downloadHTML() {
+  const html = document.getElementById("output").value;
+
+  if (!html) {
+    document.getElementById("status").textContent =
+      "Nothing to download!";
+    return;
+  }
+
+  const blob = new Blob([html], {type: "text/html"});
+  const link = document.createElement("a");
+
+  link.href = URL.createObjectURL(blob);
+  link.download = "extracted-website.html";
+  link.click();
+
+  URL.revokeObjectURL(link.href);
+}
+
+function clearAll() {
+  document.getElementById("url").value = "";
+  document.getElementById("output").value = "";
+  document.getElementById("status").textContent = "Cleared.";
+}
+</script>
+
+</body>
+</html>
